@@ -30,7 +30,6 @@ import time
 import ConfigParser
 
 from tradfri import tradfriStatus
-from tqdm import tqdm
 
 def main():
     """ main function """
@@ -47,18 +46,15 @@ def main():
     devices = tradfriStatus.tradfri_get_devices(hubip, securityid)
     groups = tradfriStatus.tradfri_get_groups(hubip, securityid)
 
-    for deviceid in tqdm(range(len(devices)), desc='Tradfri lightbulbs', unit=' lightbulb'):
-        lightbulb.append(tradfriStatus.tradfri_get_lightbulb(hubip, securityid,
-                                                             str(devices[deviceid])))
+    for deviceid in (range(len(devices))):
+        lightbulb.append(tradfriStatus.tradfri_get_lightbulb(hubip, securityid, str(devices[deviceid])))
 
     # sometimes the request are to fast, the will decline the request (flood security)
     # in this case you could increse the sleep timer
     time.sleep(.5)
-
-    for groupid in tqdm(range(len(groups)), desc='Tradfri groups', unit=' group'):
-        lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid,
-                                                          str(groups[groupid])))
-
+    for groupid in (range(len(groups))):
+        lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
+    
     print('[+] Tradfri: device information gathered')
     print('===========================================================\n')
 
