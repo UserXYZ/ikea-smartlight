@@ -35,11 +35,8 @@ def parse_args():
     """ function for getting parsed arguments """
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--action', choices=['power', 'brightness', 'color'], required=True)
-    parser.add_argument('-l', '--lightbulbid', help='lightbulbid got from tradfri-status.py',
-                        required=True)
-    parser.add_argument('-v', '--value',
-                        help='power: on/off, brightness: 0-100, color: warm/normal/cold',
-                        required=True)
+    parser.add_argument('-l', '--lightbulbid', help='lightbulbid got from tradfri-status.py', required=True)
+    parser.add_argument('-v', '--value', help='power: on/off, brightness: 0-100, color: warm/normal/cold', required=True)
 
     args = parser.parse_args()
 

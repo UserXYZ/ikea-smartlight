@@ -29,7 +29,7 @@ global coap
 coap = '/usr/local/bin/coap-client'
 
 def tradfri_power_light(hubip, securityid, lightbulbid, value):
-    """ function for power on/off tradfri lightbulb """
+    """ function for powering on/off single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, lightbulbid)
 
     if value == 'on':
@@ -37,8 +37,7 @@ def tradfri_power_light(hubip, securityid, lightbulbid, value):
     else:
         payload = '{ "3311": [{ "5850": 0 }] }'
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid,
-                                                                          payload, tradfriHub)
+    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
         os.popen(api)
@@ -50,13 +49,12 @@ def tradfri_power_light(hubip, securityid, lightbulbid, value):
 
 
 def tradfri_dim_light(hubip, securityid, lightbulbid, value):
-    """ function for dimming tradfri lightbulb """
+    """ function for dimming single tradfri lightbulb """
     dim = float(value) * 2.55
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
     payload = '{ "3311" : [{ "5851" : %s }] }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid,
-                                                                         payload, tradfriHub)
+    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
         result = os.popen(api)
@@ -67,7 +65,7 @@ def tradfri_dim_light(hubip, securityid, lightbulbid, value):
     return result
 
 def tradfri_color_light(hubip, securityid, lightbulbid, value):
-    """ function for color temperature tradfri lightbulb """
+    """ function for setting color temperature for single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
 
     if value == 'warm':
@@ -77,8 +75,7 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
     elif value == 'cold':
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("24930", "24684")
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid,
-                                                                         payload, tradfriHub)
+    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
         result = os.popen(api)
@@ -89,7 +86,7 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
     return result
 
 def tradfri_power_group(hubip, securityid, groupid, value):
-    """ function for power on/off tradfri lightbulb """
+    """ function for powering on/off tradfri lightbulb group """
     tradfriHub = 'coaps://{}:5684/15004/{}' .format(hubip, groupid)
 
     if value == 'on':
@@ -97,8 +94,7 @@ def tradfri_power_group(hubip, securityid, groupid, value):
     else:
         payload = '{ "5850" : 0 }'
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid,
-                                                                          payload, tradfriHub)
+    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
         result = os.popen(api)
@@ -110,13 +106,12 @@ def tradfri_power_group(hubip, securityid, groupid, value):
 
 
 def tradfri_dim_group(hubip, securityid, groupid, value):
-    """ function for dimming tradfri lightbulb """
+    """ function for dimming tradfri lightbulb group """
     tradfriHub = 'coaps://{}:5684/15004/{}'.format(hubip, groupid)
     dim = float(value) * 2.55
     payload = '{ "5851" : %s }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid,
-                                                                         payload, tradfriHub)
+    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
         result = os.popen(api)
