@@ -10,6 +10,8 @@
 # changelog   :
 # - v1.1.0      refactor for cleaner code                               (harald)
 # - v1.0.0      initial concept                                         (harald)
+#
+# - further modified by Floyd
 
 """
     tradfri-status.py - getting status of the Ikea Tradfri smart lights
@@ -23,13 +25,14 @@
 # C0200 -> consider-using-enumerate
 # pylint: disable=C0200, C0103
 
-from __future__ import print_function
+# from __future__ import print_function
 
 import sys
 import time
 import ConfigParser
 
 from tradfri import tradfriStatus
+from tradfri import tradfriAPI as API
 
 def main():
     """ main function """
@@ -49,25 +52,20 @@ def main():
     for deviceid in (range(len(devices))):
         lightbulb.append(tradfriStatus.tradfri_get_lightbulb(hubip, securityid, str(devices[deviceid])))
 
-    # sometimes the request are to fast, the will decline the request (flood security)
+    # sometimes the request are to fast, the hub will decline the request (flood security)
     # in this case you could increse the sleep timer
     time.sleep(.5)
     for groupid in (range(len(groups))):
         lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
-    
+
     print('[+] Tradfri: device information gathered')
     print('===========================================================\n')
 
     for _ in range(len(lightbulb)):
         try:
-            if lightbulb[_]["3311"][0]["5850"] == 0:
-                print('bulb ID {}, name: {}, brightness: {}, state: off'
-                      .format(lightbulb[_]["9003"], lightbulb[_]["9001"],
-                              lightbulb[_]["3311"][0]["5851"]))
-            else:
-                print('bulb ID {}, name: {}, brightness: {}, state: on'
-                      .format(lightbulb[_]["9003"], lightbulb[_]["9001"],
-                              lightbulb[_]["3311"][0]["5851"]))
+	    state = lightbulb[_][API._DEVICE_DATA_][0][API._ONOFF_]
+            print('bulb ID {}, name: {}, brightness: {}, state: {}'
+                      .format(lightbulb[_][API._ID_], lightbulb[_][API._NAME_], lightbulb[_][API._DEVICE_DATA_][0][API._DIMMER_], API._STATE_[state]))
         except KeyError:
             # device is not a lightbulb but a remote control, dimmer or sensor
             pass
@@ -75,12 +73,9 @@ def main():
     print('\n')
 
     for _ in range(len(lightgroup)):
-        if lightgroup[_]["5850"] == 0:
-            print('group ID: {}, name: {}, state: off'
-                  .format(lightgroup[_]["9003"], lightgroup[_]["9001"]))
-        else:
-            print('group ID: {}, name: {}, state: on'
-                  .format(lightgroup[_]["9003"], lightgroup[_]["9001"]))
+	    gstate = lightgroup[_][API._ONOFF_]
+            print('group ID: {}, name: {}, state: {}'
+                  .format(lightgroup[_]["9003"], lightgroup[_]["9001"], API._STATE_[gstate]))
 
 if __name__ == "__main__":
     main()
