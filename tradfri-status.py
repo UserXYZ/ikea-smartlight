@@ -64,8 +64,11 @@ def main():
     for _ in range(len(lightbulb)):
         try:
 	    state = lightbulb[_][API._DEVICE_DATA_][0][API._ONOFF_]
-            print('bulb ID {}, name: {}, brightness: {}, state: {}'
-                      .format(lightbulb[_][API._ID_], lightbulb[_][API._NAME_], lightbulb[_][API._DEVICE_DATA_][0][API._DIMMER_], API._STATE_[state]))
+	    type = lightbulb[_]["3"]["1"]
+            print('bulb ID {}, type: {}, name: {}, brightness: {}, state: {}'
+                      .format(lightbulb[_][API._ID_], type, lightbulb[_][API._NAME_], 
+                      str('{:.0f}'.format(round(lightbulb[_][API._DEVICE_DATA_][0][API._DIMMER_]/2.54))+'%'), 
+                      API._STATE_[state]))
         except KeyError:
             # device is not a lightbulb but a remote control, dimmer or sensor
             pass
