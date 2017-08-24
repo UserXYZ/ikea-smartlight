@@ -43,7 +43,7 @@ def tradfri_get_devices(hubip, securityid):
 
     return json.loads(result.read().strip('\n'))
 
-def tradfri_get_lightbulb(hubip, securityid, deviceid):
+def tradfri_get_lightdev(hubip, securityid, deviceid):
     """ function for getting tradfri lightbulb information """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, deviceid)
     api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid,
