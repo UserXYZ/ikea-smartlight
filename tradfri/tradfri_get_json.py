@@ -69,5 +69,4 @@ def get_groups_json(hubip, securityid):
 		"State":API._STATE_[gstate],
 		"Brightness":gbrightness,
 		"Devices":ggdev}))
-	    
     return groups_json
