@@ -12,10 +12,14 @@ def get_ldevs(hubip, securityid):
     lightdev = []
     ldevs = []
     devices = tradfriStatus.tradfri_get_devices(hubip, securityid)
-
-    for deviceid in (range(len(devices))):
-        lightdev.append(tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid])))
-
+    #sys.stderr.write(str(devices)+"\n")
+    try:
+	for deviceid in (range(len(devices))):
+    	    lightdev.append(tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid])))
+    except TypeError:
+	sys.stderr.write("Can't get devices\n")
+	return ldevs
+    #sys.stderr.write(str(lightdev)+"\n")
     for _ in range(len(lightdev)):
         try:
 	    devs = []
@@ -36,12 +40,12 @@ def get_ldevs(hubip, securityid):
 def get_ldevs_json(hubip, securityid):
     ldevs_json = []
     ldevs = get_ldevs(hubip, securityid)
-
-    for _ in range(len(ldevs)):
-	ldevs_json.append(json.dumps({"ID":ldevs[_][0],
-    	    "DeviceType":ldevs[_][1],"DeviceName":ldevs[_][2],
-    	    "State":ldevs[_][3],
-    	    "Brightness":ldevs[_][4]}))
+    if len(ldevs) > 0: # something read from hub, exception didn't return an empty list
+	for _ in range(len(ldevs)):
+	    ldevs_json.append(json.dumps({"ID":ldevs[_][0],
+    		"DeviceType":ldevs[_][1],"DeviceName":ldevs[_][2],
+    		"State":ldevs[_][3],
+    		"Brightness":ldevs[_][4]}))
     return ldevs_json
 
 def get_groups_json(hubip, securityid):
@@ -50,8 +54,12 @@ def get_groups_json(hubip, securityid):
     groups = tradfriStatus.tradfri_get_groups(hubip, securityid)
     ldevs = get_ldevs(hubip, securityid)
 
-    for groupid in (range(len(groups))):
-        lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
+    try:
+	for groupid in (range(len(groups))):
+    	    lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
+    except TypeError:
+	sys.stderr.write("Can't get groups\n")
+	return groups_json
 
     for _ in range(len(lightgroup)):
 	    ggdev = []
