@@ -32,21 +32,22 @@ def tradfri_power_light(hubip, securityid, lightbulbid, value):
     """ function for powering on/off single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, lightbulbid)
 
-    if value == 'on':
+    if value == 'On':
         payload = '{ "3311": [{ "5850": 1 }] }'
-    else:
+    elif value == 'Off':
         payload = '{ "3311": [{ "5850": 0 }] }'
+    else:
+	return False
 
     api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
 
     if os.path.exists(coap):
-        os.popen(api)
+        result = os.popen(api)
     else:
         sys.stderr.write('[-] libcoap: could not find libcoap\n')
         sys.exit(1)
 
-    return True
-
+    return result
 
 def tradfri_dim_light(hubip, securityid, lightbulbid, value):
     """ function for dimming single tradfri lightbulb """
@@ -68,11 +69,11 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
     """ function for setting color temperature for single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
 
-    if value == 'warm':
+    if value == 'Warm':
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("33135", "27211")
-    elif value == 'normal':
+    elif value == 'Normal':
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("30140", "26909")
-    elif value == 'cold':
+    elif value == 'Cold':
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("24930", "24684")
 
     api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
@@ -89,10 +90,12 @@ def tradfri_power_group(hubip, securityid, groupid, value):
     """ function for powering on/off tradfri lightbulb group """
     tradfriHub = 'coaps://{}:5684/15004/{}' .format(hubip, groupid)
 
-    if value == 'on':
+    if value == 'On':
         payload = '{ "5850" : 1 }'
-    else:
+    elif value == 'Off':
         payload = '{ "5850" : 0 }'
+    else:
+	return False
 
     api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
 
@@ -103,7 +106,6 @@ def tradfri_power_group(hubip, securityid, groupid, value):
         sys.exit(1)
 
     return result
-
 
 def tradfri_dim_group(hubip, securityid, groupid, value):
     """ function for dimming tradfri lightbulb group """
