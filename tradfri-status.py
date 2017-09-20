@@ -50,7 +50,7 @@ def main():
     groups = tradfriStatus.tradfri_get_groups(hubip, securityid)
 
     for deviceid in (range(len(devices))):
-        lightbulb.append(tradfriStatus.tradfri_get_lightbulb(hubip, securityid, str(devices[deviceid])))
+        lightbulb.append(tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid])))
 
     # sometimes the request are to fast, the hub will decline the request (flood security)
     # in this case you could increse the sleep timer
