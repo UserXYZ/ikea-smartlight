@@ -4,10 +4,14 @@ from tradfri.tradfri_daemon import Daemon
 import sys, time, ConfigParser, os, json, signal
 import paho.mqtt.client as mqtt
 import tradfri.tradfri_get_json as js
+import tradfri.tradfriActions as act
+from tradfri.tradfriHelper import errmsg as errmsg
 
 client = mqtt.Client("Tradfri")
 cfg = os.getcwd()+'/tradfri.cfg'
 running = False
+devids = set()
+groupids = set()
 
 class MyDaemon(Daemon):
     # loop flag: True, loop running; False, loop stopped
@@ -18,43 +22,51 @@ class MyDaemon(Daemon):
                 self.flag = False
     # runner that we override
     def run(self):
-	global running
-	global client
+	global running, client, devids, groupids
+	
 	# catch signals and call signal handler metdhod when caught
 	signal.signal(signal.SIGTERM, self.sigh)
 	signal.signal(signal.SIGINT, self.sigh)
 	# setup everything and connect, subscribe etc
-	mqtt_srv, mqtt_port, topic, hubip, securityid = setup()
+	mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
+	setup()
 	client.connect(mqtt_srv, mqtt_port, 60)
 	(result, mid) = client.subscribe([(topic+"/devices/todo", 1), (topic+"/groups/todo", 1)])
 	if result == mqtt.MQTT_ERR_SUCCESS:
 	    pass
 	else:
-    	    sys.stderr.write(result+'\n')
+    	    errmsg(result)
 	client.loop_start()
 	time.sleep(0.2)
 	# main loop that works in a forked process
 	while self.flag == True:
+	    # clean device and group id lists
+	    #devids.clear()
+	    #groupids.clear()
 	    # get group data as json and publish to /groups topic
 	    msg = js.get_groups_json(hubip, securityid)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
 		id = str(msg_json["ID"])
-		(result, mid) = client.publish(topic+"/groups"+id, str(msg_json), 1, False)
+		if id: # got something, append to device id list
+		    groupids.add(id)
+		(result, mid) = client.publish(topic+"/groups/"+id, str(msg_json), 1, False)
 		if result == mqtt.MQTT_ERR_SUCCESS:
 		    pass
 		else:
-    		    sys.stderr.write(result+'\n')
+    		    errmsg(result)
 	    # get devices data as json and publis to /devices topic
 	    msg = js.get_ldevs_json(hubip, securityid)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
 		id = str(msg_json["ID"])
-		(result, mid) = client.publish(topic+"/devices"+id, str(msg_json), 1, False)
+		if id: # got something, append to group id list
+		    devids.add(id)
+		(result, mid) = client.publish(topic+"/devices/"+id, str(msg_json), 1, False)
 		if result == mqtt.MQTT_ERR_SUCCESS:
 		    pass
 		else:
-    		    sys.stderr.write(result+'\n')
+    		    errmsg(result)
 	    # we are running, wait for a while
 	    running = True
     	    time.sleep(1)
@@ -66,7 +78,7 @@ class MyDaemon(Daemon):
 	time.sleep(0.5)
 
 def on_connect(client, userdata, flags, rc):
-    sys.stderr.write("Connected with result code "+str(rc)+"\n")
+    errmsg("Connected with result code "+str(rc))
     time.sleep(0.1)
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -74,37 +86,83 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     if rc != mqtt.MQTT_ERR_SUCCESS:
-        sys.stderr.write("Unexpected disconnection"+str(rc)+"\n")
+        errmsg("Unexpected disconnection"+str(rc))
     else:
-	sys.stderr.write("Disconnected succesfully\n")
+	errmsg("Disconnected succesfully)
 	client.loop_stop()
 	time.sleep(0.2)
 
 def on_message(client, userdata, msg):
-    sys.stderr.write("message on: "+msg.topic+" : "+str(msg.payload)+"\n")
+    global devids, groupids
+
+    mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
+
+    errmsg("message on: "+msg.topic+" : "+str(msg.payload))
     # check message content
     try:
 	m = json.loads(msg.payload)
 	id = m["ID"]
-	st = m["State"]
-    except ValueError:
+	sid = str(id)
+	# parse message by ID
+	# first, check if ID exists
+	#errmsg("got id: "+sid)
+	if id > 65535:
+	    text=""
+	    if "State" in m:
+		st = m["State"]
+		text=text+" State: "+st+" "
+	    if "Brightness" in m:
+		brt = m["Brightness"]
+		text=text+" Brightness: "+str(brt)+" "
+	    if "Color" in m:
+		col = m["Color"]
+		text=text+" Color: "+str(col)+" "
+	    errmsg("got id: "+sid+" "+text)
+	    #errmsg(str(devids))
+	    # then check what id it is of
+	    if sid in devids: # normal lights
+	        errmsg("id "+sid+" is in device list")
+	        if st:
+	    	    res = act.tradfri_power_light(hubip, securityid, id, st)
+	    	    if res != False:
+	    		pass
+		    else:
+			errmsg("Bad result from COAP client")
+	        # send command to device
+	    elif sid in groupids: # light groups
+	        errmsg("id "+sid+" is in group list")
+	        if st:
+	    	    res = act.tradfri_power_group(hubip, securityid, id, st)
+	    	    if res != False:
+	    		pass
+		    else:
+			errmsg("Bad result from COAP client")
+	        # send command to group
+	    else:
+	        errmsg("id "+sid+" is not in device or group id lists")
+	        pass
+	else:
+	    errmsg("ID wrong")
+    #except (TypeError, ValueError) as err:
+	#errmsg(str(err))
+	#pass
+    except KeyError as err:
+	errmsg("Value missing from JSON: "+str(err))
 	pass
-    # check current status st of device id and change accordingly
 
 def on_publish(client, userdata, mid):
-    sys.stderr.write("message sent: " + str(mid)+"\n")
+    errmsg("message sent: " + str(mid))
 
 def on_subscribe(client, userdata, mid, granted_qos):
-    sys.stderr.write("Subscribed: " + str(mid) + " " + str(granted_qos)+"\n")
-    
+    errmsg("Subscribed: " + str(mid) + " " + str(granted_qos))
+
 def on_unsubscribe(client, userdata, mid):
-    sys.stderr.write("Unsubscribed: " + str(mid) + "\n")
+    errmsg("Unsubscribed: " + str(mid))
 
 def on_log(client, userdata, level, string):
-    sys.stderr.write(string+"\n")
+    errmsg(string+"\n")
 
-def setup():
-    global client
+def get_config():
     # read configuration from cfg file
     conf = ConfigParser.ConfigParser()
     conf.read(cfg)
@@ -113,6 +171,12 @@ def setup():
     topic = conf.get('tradfri', 'topic')
     hubip = conf.get('tradfri', 'hubip')
     securityid = conf.get('tradfri', 'securityid')
+    return mqtt_srv, mqtt_port, topic, hubip, securityid
+
+def setup():
+    global client
+
+    mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
     # define callback methods
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -121,8 +185,6 @@ def setup():
     client.on_unsubscribe = on_unsubscribe
     client.will_set = (topic, "Tradfri went offline!", 1, True)
     #client.on_log = on_log
-
-    return mqtt_srv, mqtt_port, topic, hubip, securityid
 
 def main():
     # create new daemon
