@@ -5,6 +5,7 @@ import json
 
 from tradfri import tradfriStatus
 from tradfri import tradfriAPI as API
+from tradfri.tradfriHelper import errmsg as errmsg
 
 gldevs = []
 
@@ -12,14 +13,14 @@ def get_ldevs(hubip, securityid):
     lightdev = []
     ldevs = []
     devices = tradfriStatus.tradfri_get_devices(hubip, securityid)
-    #sys.stderr.write(str(devices)+"\n")
+    #errmsg(str(devices))
     try:
 	for deviceid in (range(len(devices))):
     	    lightdev.append(tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid])))
     except TypeError:
-	sys.stderr.write("Can't get devices\n")
+	errmsg("Can't get devices")
 	return ldevs
-    #sys.stderr.write(str(lightdev)+"\n")
+    #errmsg(str(lightdev)+"\n")
     for _ in range(len(lightdev)):
         try:
 	    devs = []
@@ -58,7 +59,7 @@ def get_groups_json(hubip, securityid):
 	for groupid in (range(len(groups))):
     	    lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
     except TypeError:
-	sys.stderr.write("Can't get groups\n")
+	errmsg("Can't get groups")
 	return groups_json
 
     for _ in range(len(lightgroup)):
