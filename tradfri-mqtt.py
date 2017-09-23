@@ -69,7 +69,7 @@ class MyDaemon(Daemon):
     		    errmsg(result)
 	    # we are running, wait for a while
 	    running = True
-    	    time.sleep(1)
+    	    time.sleep(2)
 	# we're not running anymore, unsubscribe and disconnect
 	running = False
 	client.unsubscribe([topic+"/devices/todo", topic+"/groups/todo"])
@@ -79,7 +79,7 @@ class MyDaemon(Daemon):
 
 def on_connect(client, userdata, flags, rc):
     errmsg("Connected with result code "+str(rc))
-    time.sleep(0.1)
+    time.sleep(0.2)
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     #client.subscribe(topic)
@@ -88,7 +88,7 @@ def on_disconnect(client, userdata, rc):
     if rc != mqtt.MQTT_ERR_SUCCESS:
         errmsg("Unexpected disconnection"+str(rc))
     else:
-	errmsg("Disconnected succesfully)
+	errmsg("Disconnected succesfully")
 	client.loop_stop()
 	time.sleep(0.2)
 
@@ -111,23 +111,41 @@ def on_message(client, userdata, msg):
 	    if "State" in m:
 		st = m["State"]
 		text=text+" State: "+st+" "
+	    else:
+		st = None
 	    if "Brightness" in m:
 		brt = m["Brightness"]
 		text=text+" Brightness: "+str(brt)+" "
+	    else:
+		brt = None
 	    if "Color" in m:
 		col = m["Color"]
 		text=text+" Color: "+str(col)+" "
+	    else:
+		col = None
 	    errmsg("got id: "+sid+" "+text)
 	    #errmsg(str(devids))
 	    # then check what id it is of
 	    if sid in devids: # normal lights
 	        errmsg("id "+sid+" is in device list")
-	        if st:
+	    	if st:
 	    	    res = act.tradfri_power_light(hubip, securityid, id, st)
 	    	    if res != False:
-	    		pass
+	    	        pass
 		    else:
-			errmsg("Bad result from COAP client")
+		        errmsg("Bad result from COAP client")
+		if brt:
+		    res = act.tradfri_dim_light(hubip, securityid, id, brt)
+		    if res:
+	    	        pass
+		    else:
+		        errmsg("Bad result from COAP client")
+		if col:
+		    res = act.tradfri_color_light(hubip, securityid, id, col)
+		    if res != False:
+			pass
+		    else:
+			errmsg("Bad color code, can be only 'Warm', 'Normal', or 'Cold'")
 	        # send command to device
 	    elif sid in groupids: # light groups
 	        errmsg("id "+sid+" is in group list")
@@ -137,6 +155,12 @@ def on_message(client, userdata, msg):
 	    		pass
 		    else:
 			errmsg("Bad result from COAP client")
+		if brt:
+		    res = act.tradfri_dim_group(hubip, securityid, id, brt)
+		    if res:
+	    	        pass
+		    else:
+		        errmsg("Bad result from COAP client")
 	        # send command to group
 	    else:
 	        errmsg("id "+sid+" is not in device or group id lists")
