@@ -75,6 +75,8 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("30140", "26909")
     elif value == 'Cold':
         payload = '{ "3311" : [{ "5709" : %s, "5710": %s }] }' % ("24930", "24684")
+    else:
+	return False
 
     api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
 
