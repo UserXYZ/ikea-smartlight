@@ -22,11 +22,22 @@
 # C0103 -> invalid-name
 # pylint: disable=C0103
 
-import sys
-import os
+import sys, os, subprocess
+from shlex import split
+from tradfri.tradfriHelper import errmsg as errmsg
 
 global coap
 coap = '/usr/local/bin/coap-client'
+
+def send(cmd):
+    try:
+	return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=False)
+    except subprocess.CalledProcessError as err:
+        errmsg("Bad arguments for libcoap: "+str(err.output))
+    except OSError as err:
+        errmsg(str(err.strerror)+"[-] libcoap: could not find libcoap")
+
+    return False
 
 def tradfri_power_light(hubip, securityid, lightbulbid, value):
     """ function for powering on/off single tradfri lightbulb """
@@ -39,15 +50,8 @@ def tradfri_power_light(hubip, securityid, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
-
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap\n')
-        sys.exit(1)
-
-    return result
+    cmd = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
+    return send(split(cmd))
 
 def tradfri_dim_light(hubip, securityid, lightbulbid, value):
     """ function for dimming single tradfri lightbulb """
@@ -55,15 +59,8 @@ def tradfri_dim_light(hubip, securityid, lightbulbid, value):
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
     payload = '{ "3311" : [{ "5851" : %s }] }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
-
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap\n')
-        sys.exit(1)
-
-    return result
+    cmd = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    return send(split(cmd))
 
 def tradfri_color_light(hubip, securityid, lightbulbid, value):
     """ function for setting color temperature for single tradfri lightbulb """
@@ -78,15 +75,8 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
-
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap\n')
-        sys.exit(1)
-
-    return result
+    cmd = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    return send(split(cmd))
 
 def tradfri_power_group(hubip, securityid, groupid, value):
     """ function for powering on/off tradfri lightbulb group """
@@ -99,15 +89,8 @@ def tradfri_power_group(hubip, securityid, groupid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
-
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap\n')
-        sys.exit(1)
-
-    return result
+    cmd = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
+    return send(split(cmd))
 
 def tradfri_dim_group(hubip, securityid, groupid, value):
     """ function for dimming tradfri lightbulb group """
@@ -115,12 +98,5 @@ def tradfri_dim_group(hubip, securityid, groupid, value):
     dim = float(value) * 2.55
     payload = '{ "5851" : %s }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
-
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap\n')
-        sys.exit(1)
-
-    return result
+    cmd = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    return send(cmd)
