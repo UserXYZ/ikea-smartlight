@@ -47,29 +47,30 @@ class MyDaemon(Daemon):
 	    msg = js.get_groups_json(hubip, securityid)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
-		id = str(msg_json["ID"])
+		id = msg_json["ID"]
 		if id: # got something, append to device id list
 		    groupids.add(id)
-		(result, mid) = client.publish(topic+"/groups/"+id, str(msg_json), 1, False)
+		(result, mid) = client.publish(topic+"/groups", msg[_], 1, False)
 		if result == mqtt.MQTT_ERR_SUCCESS:
 		    pass
 		else:
     		    errmsg(result)
+    	    time.sleep(1)
 	    # get devices data as json and publis to /devices topic
 	    msg = js.get_ldevs_json(hubip, securityid)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
-		id = str(msg_json["ID"])
+		id = msg_json["ID"]
 		if id: # got something, append to group id list
 		    devids.add(id)
-		(result, mid) = client.publish(topic+"/devices/"+id, str(msg_json), 1, False)
+		(result, mid) = client.publish(topic+"/devices", msg[_], 1, False)
 		if result == mqtt.MQTT_ERR_SUCCESS:
 		    pass
 		else:
     		    errmsg(result)
 	    # we are running, wait for a while
 	    running = True
-    	    time.sleep(2)
+    	    time.sleep(4)
 	# we're not running anymore, unsubscribe and disconnect
 	running = False
 	client.unsubscribe([topic+"/devices/todo", topic+"/groups/todo"])
@@ -79,7 +80,7 @@ class MyDaemon(Daemon):
 
 def on_connect(client, userdata, flags, rc):
     errmsg("Connected with result code "+str(rc))
-    time.sleep(0.2)
+    time.sleep(0.5)
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     #client.subscribe(topic)
@@ -90,7 +91,7 @@ def on_disconnect(client, userdata, rc):
     else:
 	errmsg("Disconnected succesfully")
 	client.loop_stop()
-	time.sleep(0.2)
+	time.sleep(0.5)
 
 def on_message(client, userdata, msg):
     global devids, groupids
@@ -123,7 +124,7 @@ def on_message(client, userdata, msg):
 		text=text+" Color: "+str(col)+" "
 	    else:
 		col = None
-	    errmsg("got id: "+sid+" "+text)
+	    #errmsg("got id: "+sid+" "+text)
 	    #errmsg(str(devids))
 	    # then check what id it is of
 	    if sid in devids: # normal lights
@@ -167,12 +168,10 @@ def on_message(client, userdata, msg):
 	        pass
 	else:
 	    errmsg("ID wrong")
-    #except (TypeError, ValueError) as err:
-	#errmsg(str(err))
-	#pass
+    except (TypeError, ValueError) as err:
+	errmsg(str(err))
     except KeyError as err:
 	errmsg("Value missing from JSON: "+str(err))
-	pass
 
 def on_publish(client, userdata, mid):
     errmsg("message sent: " + str(mid))
