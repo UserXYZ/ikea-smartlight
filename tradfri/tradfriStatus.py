@@ -22,77 +22,134 @@
 # C0103 -> invalid-name
 # pylint: disable=C0103
 
-import sys
-import os
-import json
+import sys, os, json, subprocess
+from shlex import split
+# import directly from same package/folder
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from tradfriHelper import errmsg as errmsg
 
 global coap
 coap = '/usr/local/bin/coap-client'
 
+"""
+def send(cmd):
+    try:
+	return subprocess.check_output(cmd, shell=True)
+    except subprocess.CalledProcessError as err:
+        errmsg("Bad arguments for libcoap: "+str(err.output))
+    except OSError as err:
+        errmsg(str(err.strerror)+"[-] libcoap: could not find libcoap")
+
+    return False
+"""
+
+def send(api):
+    try:
+	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, universal_newlines=True, shell=False)
+    except OSError as err:
+        print(str(err.strerror)+"[-] libcoap: could not find libcoap")
+        return False
+    try:
+	p2 = subprocess.Popen(["/usr/bin/awk", "NR==5"], stdin=p1.stdout, stdout=subprocess.PIPE)
+    except OSError as err:
+        print(str(err.strerror)+"[-] awk: could not find awk")
+        return False
+    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+    result = p2.communicate()[0]
+    
+    return result
+
 def tradfri_get_devices(hubip, securityid):
     """ function for getting all tradfri device ids """
     tradfriHub = 'coaps://{}:5684/15001' .format(hubip)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\'' .format(coap, securityid,
-                                                                                tradfriHub)
+    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
 
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap.\n')
-        sys.exit(1)
+    result = send(api)
 
     try:
-	return json.loads(result.read().strip('\n'))
+	return json.loads(result.strip('\n'))
     except ValueError:
-	sys.stderr.write("Can't get devices\n")
+	errmsg("status-get_devices: Can't get devices")
+	return False
 
 def tradfri_get_lightdev(hubip, securityid, deviceid):
     """ function for getting tradfri lightbulb information """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, deviceid)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid,
-                                                                               tradfriHub)
+    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
 
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap.\n')
-        sys.exit(1)
+    result = send(api)
 
     try:
-	return json.loads(result.read().strip('\n'))
+	return json.loads(result.strip('\n'))
     except ValueError:
-	sys.stderr.write("Can't get device data\n")
+	errmsg("status-get_lightdev: Can't get device data")
+	errmsg(str(result))
+	return False
 
 def tradfri_get_groups(hubip, securityid):
     """ function for getting tradfri groups """
     tradfriHub = 'coaps://{}:5684/15004'.format(hubip)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid,
-                                                                               tradfriHub)
+    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
 
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap.\n')
-        sys.exit(1)
-    
+    result = send(api)
+
     try:
-	return json.loads(result.read().strip('\n'))
+	return json.loads(result.strip('\n'))
     except ValueError:
-	sys.stderr.write("Can't get groups\n")
+	errmsg("status-get_groups: Can't get groups")
+	return False
 
 def tradfri_get_group(hubip, securityid, groupid):
     """ function for getting tradfri group information """
     tradfriHub = 'coaps://{}:5684/15004/{}'.format(hubip, groupid)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid,
-                                                                               tradfriHub)
+    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
 
-    if os.path.exists(coap):
-        result = os.popen(api)
-    else:
-        sys.stderr.write('[-] libcoap: could not find libcoap.\n')
-        sys.exit(1)
+    result = send(api)
 
     try:
-	return json.loads(result.read().strip('\n'))
+	return json.loads(result.strip('\n'))
     except ValueError:
-	sys.stderr.write("Can't read group data\n")
+	errmsg("status-get_group: Can't read group data")
+	return False
+
+def main():
+    ConfigParser = __import__("ConfigParser")
+    time = __import__("time")
+    cfg = os.path.abspath(os.path.dirname(__file__))+'/../tradfri.cfg'
+    conf = ConfigParser.ConfigParser()
+    conf.read(cfg)
+    mqtt_srv = conf.get('tradfri', 'mqtt_srv')
+    mqtt_port = conf.get('tradfri', 'mqtt_port')
+    topic = conf.get('tradfri', 'topic')
+    hubip = conf.get('tradfri', 'hubip')
+    securityid = conf.get('tradfri', 'securityid')
+
+    print time.asctime()
+    while True:
+	""" works ok
+	res = tradfri_get_devices(hubip, securityid)
+	if res == False:
+	    print time.asctime(), "Devices Faaaaail!"
+	else:
+	    print res
+	time.sleep(2)
+	res = tradfri_get_groups(hubip, securityid)
+	if res == False:
+	    print time.asctime(), "Groups Faaaaail!"
+	else:
+	    print res
+	"""
+	res = tradfri_get_lightdev(hubip, securityid, 65537)
+	if res == False:
+	    print time.asctime(), "get_ligtdev Faaaaail!"
+	else:
+	    print time.clock(), res
+	time.sleep(2)
+	
+if __name__ == "__main__":
+    main()
+    sys.exit(0)
