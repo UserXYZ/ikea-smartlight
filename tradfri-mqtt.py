@@ -56,7 +56,7 @@ class MyDaemon(Daemon):
 		else:
     		    errmsg(result)
     	    time.sleep(1)
-	    # get devices data as json and publis to /devices topic
+	    # get devices data as json and publish to /devices topic
 	    msg = js.get_ldevs_json(hubip, securityid)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
@@ -127,8 +127,8 @@ def on_message(client, userdata, msg):
 	    #errmsg("got id: "+sid+" "+text)
 	    #errmsg(str(devids))
 	    # then check what id it is of
-	    if sid in devids: # normal lights
-	        errmsg("id "+sid+" is in device list")
+	    if id in devids: # normal lights
+	        #errmsg("id "+sid+" is in device list")
 	    	if st:
 	    	    res = act.tradfri_power_light(hubip, securityid, id, st)
 	    	    if res != False:
@@ -148,8 +148,8 @@ def on_message(client, userdata, msg):
 		    else:
 			errmsg("Bad color code, can be only 'Warm', 'Normal', or 'Cold'")
 	        # send command to device
-	    elif sid in groupids: # light groups
-	        errmsg("id "+sid+" is in group list")
+	    elif id in groupids: # light groups
+	        #errmsg("id "+sid+" is in group list")
 	        if st:
 	    	    res = act.tradfri_power_group(hubip, securityid, id, st)
 	    	    if res != False:
