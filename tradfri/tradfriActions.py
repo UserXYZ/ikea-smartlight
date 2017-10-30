@@ -27,7 +27,7 @@ from shlex import split
 from tradfri.tradfriHelper import errmsg as errmsg
 
 global coap
-coap = '/usr/local/bin/coap-client'
+coap = '/usr/local/bin/coap-client.old'
 """
 def send(cmd):
     try:
