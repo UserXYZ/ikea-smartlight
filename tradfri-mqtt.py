@@ -8,7 +8,7 @@ import tradfri.tradfriActions as act
 from tradfri.tradfriHelper import errmsg as errmsg
 
 client = mqtt.Client("Tradfri")
-cfg = os.getcwd()+'/tradfri.cfg'
+cfg = os.path.abspath(os.path.dirname(__file__))+'/tradfri.cfg'
 running = False
 devids = set()
 groupids = set()
@@ -70,7 +70,7 @@ class MyDaemon(Daemon):
     		    errmsg(result)
 	    # we are running, wait for a while
 	    running = True
-    	    time.sleep(4)
+    	    time.sleep(8)
 	# we're not running anymore, unsubscribe and disconnect
 	running = False
 	client.unsubscribe([topic+"/devices/todo", topic+"/groups/todo"])
@@ -134,13 +134,13 @@ def on_message(client, userdata, msg):
 	    	    if res != False:
 	    	        pass
 		    else:
-		        errmsg("Bad result from COAP client")
+		        errmsg("d_st: Bad result from COAP client")
 		if brt:
 		    res = act.tradfri_dim_light(hubip, securityid, id, brt)
-		    if res:
+		    if res != False:
 	    	        pass
 		    else:
-		        errmsg("Bad result from COAP client")
+		        errmsg("d_brt: Bad result from COAP client")
 		if col:
 		    res = act.tradfri_color_light(hubip, securityid, id, col)
 		    if res != False:
@@ -155,13 +155,13 @@ def on_message(client, userdata, msg):
 	    	    if res != False:
 	    		pass
 		    else:
-			errmsg("Bad result from COAP client")
+			errmsg("g_st: Bad result from COAP client")
 		if brt:
 		    res = act.tradfri_dim_group(hubip, securityid, id, brt)
 		    if res:
 	    	        pass
 		    else:
-		        errmsg("Bad result from COAP client")
+		        errmsg("g_brt: Bad result from COAP client")
 	        # send command to group
 	    else:
 	        errmsg("id "+sid+" is not in device or group id lists")
