@@ -29,19 +29,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from tradfriHelper import errmsg as errmsg
 
 global coap
-coap = '/usr/local/bin/coap-client'
-
-"""
-def send(cmd):
-    try:
-	return subprocess.check_output(cmd, shell=True)
-    except subprocess.CalledProcessError as err:
-        errmsg("Bad arguments for libcoap: "+str(err.output))
-    except OSError as err:
-        errmsg(str(err.strerror)+"[-] libcoap: could not find libcoap")
-
-    return False
-"""
+coap = '/usr/local/bin/coap-client.old'
 
 def send(api):
     try:
@@ -145,7 +133,7 @@ def main():
 	"""
 	res = tradfri_get_lightdev(hubip, securityid, 65537)
 	if res == False:
-	    print time.asctime(), "get_ligtdev Faaaaail!"
+	    print time.asctime(), "get_lightdev Faaaaail!"
 	else:
 	    print time.clock(), res
 	time.sleep(2)
