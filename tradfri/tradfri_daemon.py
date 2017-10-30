@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, time, atexit
-from signal import SIGTERM
+from signal import SIGTERM, SIGKILL
 
 class Daemon:
         """
@@ -107,6 +107,7 @@ class Daemon:
                         while 1:
                                 os.kill(pid, SIGTERM)
                                 time.sleep(0.5)
+                                os.kill(pid, SIGKILL)
                 except OSError, err:
                         err = str(err)
                         if err.find("No such process") > 0:
