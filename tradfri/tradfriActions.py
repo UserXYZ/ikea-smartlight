@@ -6,57 +6,31 @@
 # author      : harald van der laan
 # date        : 2017/04/10
 # version     : v1.1.0
-#
-# changelog   :
-# - v1.1.0      refactor for cleaner code                               (harald)
-# - v1.0.0      initial concept                                         (harald)
-
-"""
-    tradfri/tradfriActions.py - controlling the Ikea tradfri smart lights
-
-    This module requires libcoap with dTLS compiled, at this moment there is no python coap module
-    that supports coap with dTLS. see ../bin/README how to compile libcoap with dTLS support
-"""
-
-# pylint convention disablement:
-# C0103 -> invalid-name
-# pylint: disable=C0103
 
 import sys, os, subprocess
 from shlex import split
-from tradfri.tradfriHelper import errmsg as errmsg
+from .tradfriHelper import errmsg as errmsg
 
 global coap
-coap = '/usr/local/bin/coap-client.old'
-"""
-def send(cmd):
-    try:
-	return subprocess.check_output(split(cmd), stderr=subprocess.STDOUT, shell=False)
-    except subprocess.CalledProcessError as err:
-        errmsg("Bad arguments for libcoap: "+str(err.output))
-    except OSError as err:
-        errmsg(str(err.strerror)+"[-] libcoap: could not find libcoap")
+coap = '/usr/local/bin/coap-client'
 
-    return False
-"""
 def send(api):
     try:
-	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, universal_newlines=True, shell=False)
+	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
     except OSError as err:
         print(str(err.strerror)+"[-] libcoap: could not find libcoap")
         return False
     try:
-	p2 = subprocess.Popen(["/usr/bin/awk", "NR==5"], stdin=p1.stdout, stdout=subprocess.PIPE)
+	p2 = subprocess.Popen(["/usr/bin/awk", "NR==2"], stdin=p1.stdout, stdout=subprocess.PIPE)
     except OSError as err:
         print(str(err.strerror)+"[-] awk: could not find awk")
         return False
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     result = p2.communicate()[0]
-    
+
     return result
 
-
-def tradfri_power_light(hubip, securityid, lightbulbid, value):
+def tradfri_power_light(hubip, ident, psk, lightbulbid, value):
     """ function for powering on/off single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, lightbulbid)
 
@@ -67,19 +41,19 @@ def tradfri_power_light(hubip, securityid, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
     return send(api)
 
-def tradfri_dim_light(hubip, securityid, lightbulbid, value):
+def tradfri_dim_light(hubip, ident, psk, lightbulbid, value):
     """ function for dimming single tradfri lightbulb """
     dim = float(value) * 2.55
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
     payload = '{ "3311" : [{ "5851" : %s }] }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
     return send(api)
 
-def tradfri_color_light(hubip, securityid, lightbulbid, value):
+def tradfri_color_light(hubip, ident, psk, lightbulbid, value):
     """ function for setting color temperature for single tradfri lightbulb """
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
 
@@ -92,10 +66,10 @@ def tradfri_color_light(hubip, securityid, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
     return send(api)
 
-def tradfri_power_group(hubip, securityid, groupid, value):
+def tradfri_power_group(hubip, ident, psk, groupid, value):
     """ function for powering on/off tradfri lightbulb group """
     tradfriHub = 'coaps://{}:5684/15004/{}' .format(hubip, groupid)
 
@@ -106,14 +80,14 @@ def tradfri_power_group(hubip, securityid, groupid, value):
     else:
 	return False
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"' .format(coap, securityid, payload, tradfriHub)
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
     return send(api)
 
-def tradfri_dim_group(hubip, securityid, groupid, value):
+def tradfri_dim_group(hubip, ident, psk, groupid, value):
     """ function for dimming tradfri lightbulb group """
     tradfriHub = 'coaps://{}:5684/15004/{}'.format(hubip, groupid)
     dim = float(value) * 2.55
     payload = '{ "5851" : %s }' % int(dim)
 
-    api = '{} -m put -u "Client_identity" -k "{}" -e \'{}\' "{}"'.format(coap, securityid, payload, tradfriHub)
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
     return send(api)

@@ -2,11 +2,9 @@
 
 import sys, json, os
 from time import sleep
-# import from here
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-import tradfriStatus
-import tradfriAPI as API
-from tradfriHelper import errmsg as errmsg
+import .tradfriStatus
+import .tradfriAPI as API
+from .tradfriHelper import errmsg as errmsg
 
 gldevs = []
 

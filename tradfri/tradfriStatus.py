@@ -7,52 +7,36 @@
 # date        : 2017/04/10
 # version     : v1.1.0
 #
-# changelog   :
-# - v1.1.0      refactor for cleaner code                               (harald)
-# - v1.0.0      initial concept                                         (harald)
-
-"""
-    tradfriStatus.py - module for getting status of the Ikea tradfri smart lights
-
-    This module requires libcoap with dTLS compiled, at this moment there is no python coap module
-    that supports coap with dTLS. see ../bin/README how to compile libcoap with dTLS support
-"""
-
-# pylint convention disablement:
-# C0103 -> invalid-name
-# pylint: disable=C0103
 
 import sys, os, json, subprocess
 from shlex import split
-# import directly from same package/folder
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from tradfriHelper import errmsg as errmsg
 
 global coap
-coap = '/usr/local/bin/coap-client.old'
+coap = '/usr/local/bin/coap-client'
+###coap-client  -m get  -u "Confuzed22" -k "6V6TYU3VlkR13TWp" "coaps://10.20.30.25:5684/15001/65537" 2>/dev/stdout|awk 'NR==2'
 
 def send(api):
     try:
-	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, universal_newlines=True, shell=False)
+	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
     except OSError as err:
         print(str(err.strerror)+"[-] libcoap: could not find libcoap")
         return False
     try:
-	p2 = subprocess.Popen(["/usr/bin/awk", "NR==5"], stdin=p1.stdout, stdout=subprocess.PIPE)
+	p2 = subprocess.Popen(["/usr/bin/awk", "NR==2"], stdin=p1.stdout, stdout=subprocess.PIPE)
     except OSError as err:
         print(str(err.strerror)+"[-] awk: could not find awk")
         return False
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     result = p2.communicate()[0]
-    
+
     return result
 
-def tradfri_get_devices(hubip, securityid):
+def tradfri_get_devices(hubip, ident, psk):
     """ function for getting all tradfri device ids """
     tradfriHub = 'coaps://{}:5684/15001' .format(hubip)
-    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
-
+    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
+    print api
     result = send(api)
 
     try:
@@ -61,11 +45,10 @@ def tradfri_get_devices(hubip, securityid):
 	errmsg("status-get_devices: Can't get devices")
 	return False
 
-def tradfri_get_lightdev(hubip, securityid, deviceid):
+def tradfri_get_lightdev(hubip, ident, psk, deviceid):
     """ function for getting tradfri lightbulb information """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, deviceid)
-    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
     result = send(api)
 
@@ -76,11 +59,10 @@ def tradfri_get_lightdev(hubip, securityid, deviceid):
 	errmsg(str(result))
 	return False
 
-def tradfri_get_groups(hubip, securityid):
+def tradfri_get_groups(hubip, ident, psk):
     """ function for getting tradfri groups """
     tradfriHub = 'coaps://{}:5684/15004'.format(hubip)
-    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
     result = send(api)
 
@@ -90,11 +72,10 @@ def tradfri_get_groups(hubip, securityid):
 	errmsg("status-get_groups: Can't get groups")
 	return False
 
-def tradfri_get_group(hubip, securityid, groupid):
+def tradfri_get_group(hubip, ident, psk, groupid):
     """ function for getting tradfri group information """
     tradfriHub = 'coaps://{}:5684/15004/{}'.format(hubip, groupid)
-    #api = '{} -m get -u "Client_identity" -k "{}" "{}" | awk \'NR==4\''.format(coap, securityid, tradfriHub)
-    api = '{} -m get -u "Client_identity" -k "{}" "{}"'.format(coap, securityid, tradfriHub)
+    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
     result = send(api)
 
@@ -115,23 +96,25 @@ def main():
     topic = conf.get('tradfri', 'topic')
     hubip = conf.get('tradfri', 'hubip')
     securityid = conf.get('tradfri', 'securityid')
+    psk = conf.get('tradfri', 'psk')
+    ident = conf.get('tradfri', 'ident')
 
     print time.asctime()
     while True:
 	""" works ok
-	res = tradfri_get_devices(hubip, securityid)
+	res = tradfri_get_devices(hubip, ident, psk)
 	if res == False:
 	    print time.asctime(), "Devices Faaaaail!"
 	else:
 	    print res
 	time.sleep(2)
-	res = tradfri_get_groups(hubip, securityid)
+	res = tradfri_get_groups(hubip, ident, psk)
 	if res == False:
 	    print time.asctime(), "Groups Faaaaail!"
 	else:
 	    print res
 	"""
-	res = tradfri_get_lightdev(hubip, securityid, 65537)
+	res = tradfri_get_lightdev(hubip, ident, psk, 65537)
 	if res == False:
 	    print time.asctime(), "get_lightdev Faaaaail!"
 	else:
