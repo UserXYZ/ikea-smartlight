@@ -2,6 +2,7 @@
 
 import sys, json, os
 from time import sleep
+
 import .tradfriStatus
 import .tradfriAPI as API
 from .tradfriHelper import errmsg as errmsg

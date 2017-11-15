@@ -9,6 +9,9 @@
 
 import sys, os, subprocess
 from shlex import split
+
+# import directly from same package/folder
+#sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from .tradfriHelper import errmsg as errmsg
 
 global coap

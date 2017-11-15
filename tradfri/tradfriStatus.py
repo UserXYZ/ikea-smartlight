@@ -10,7 +10,8 @@
 
 import sys, os, json, subprocess
 from shlex import split
-from tradfriHelper import errmsg as errmsg
+
+from .tradfriHelper import errmsg as errmsg
 
 global coap
 coap = '/usr/local/bin/coap-client'
