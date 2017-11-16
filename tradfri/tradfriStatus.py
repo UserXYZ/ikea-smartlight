@@ -17,7 +17,9 @@ global coap
 coap = '/usr/local/bin/coap-client'
 ###coap-client  -m get  -u "Confuzed22" -k "6V6TYU3VlkR13TWp" "coaps://10.20.30.25:5684/15001/65537" 2>/dev/stdout|awk 'NR==2'
 
-def send(api):
+def send(ident, psk, payload, tradfriHub):
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
+
     try:
 	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
     except OSError as err:
@@ -36,9 +38,8 @@ def send(api):
 def tradfri_get_devices(hubip, ident, psk):
     """ function for getting all tradfri device ids """
     tradfriHub = 'coaps://{}:5684/15001' .format(hubip)
-    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
-    print api
-    result = send(api)
+
+    result = send(ident, psk, tradfriHub)
 
     try:
 	return json.loads(result.strip('\n'))
@@ -49,9 +50,8 @@ def tradfri_get_devices(hubip, ident, psk):
 def tradfri_get_lightdev(hubip, ident, psk, deviceid):
     """ function for getting tradfri lightbulb information """
     tradfriHub = 'coaps://{}:5684/15001/{}' .format(hubip, deviceid)
-    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
-    result = send(api)
+    result = send(ident, psk, tradfriHub)
 
     try:
 	return json.loads(result.strip('\n'))
@@ -63,9 +63,8 @@ def tradfri_get_lightdev(hubip, ident, psk, deviceid):
 def tradfri_get_groups(hubip, ident, psk):
     """ function for getting tradfri groups """
     tradfriHub = 'coaps://{}:5684/15004'.format(hubip)
-    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
-    result = send(api)
+    result = send(ident, psk, tradfriHub)
 
     try:
 	return json.loads(result.strip('\n'))
@@ -76,9 +75,8 @@ def tradfri_get_groups(hubip, ident, psk):
 def tradfri_get_group(hubip, ident, psk, groupid):
     """ function for getting tradfri group information """
     tradfriHub = 'coaps://{}:5684/15004/{}'.format(hubip, groupid)
-    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
 
-    result = send(api)
+    result = send(ident, psk, tradfriHub)
 
     try:
 	return json.loads(result.strip('\n'))

@@ -17,7 +17,10 @@ from .tradfriHelper import errmsg as errmsg
 global coap
 coap = '/usr/local/bin/coap-client'
 
-def send(api):
+def send(ident, psk, payload, tradfriHub):
+
+    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
+    
     try:
 	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
     except OSError as err:
@@ -44,8 +47,7 @@ def tradfri_power_light(hubip, ident, psk, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
-    return send(api)
+    return send(ident, psk, payload, tradfriHub)
 
 def tradfri_dim_light(hubip, ident, psk, lightbulbid, value):
     """ function for dimming single tradfri lightbulb """
@@ -53,8 +55,7 @@ def tradfri_dim_light(hubip, ident, psk, lightbulbid, value):
     tradfriHub = 'coaps://{}:5684/15001/{}'.format(hubip, lightbulbid)
     payload = '{ "3311" : [{ "5851" : %s }] }' % int(dim)
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
-    return send(api)
+    return send(ident, psk, payload, tradfriHub)
 
 def tradfri_color_light(hubip, ident, psk, lightbulbid, value):
     """ function for setting color temperature for single tradfri lightbulb """
@@ -69,8 +70,7 @@ def tradfri_color_light(hubip, ident, psk, lightbulbid, value):
     else:
 	return False
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
-    return send(api)
+    return send(ident, psk, payload, tradfriHub)
 
 def tradfri_power_group(hubip, ident, psk, groupid, value):
     """ function for powering on/off tradfri lightbulb group """
@@ -83,8 +83,7 @@ def tradfri_power_group(hubip, ident, psk, groupid, value):
     else:
 	return False
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
-    return send(api)
+    return send(ident, psk, payload, tradfriHub)
 
 def tradfri_dim_group(hubip, ident, psk, groupid, value):
     """ function for dimming tradfri lightbulb group """
@@ -92,5 +91,4 @@ def tradfri_dim_group(hubip, ident, psk, groupid, value):
     dim = float(value) * 2.55
     payload = '{ "5851" : %s }' % int(dim)
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"'.format(coap, ident, psk, payload, tradfriHub)
-    return send(api)
+    return send(ident, psk, payload, tradfriHub)
