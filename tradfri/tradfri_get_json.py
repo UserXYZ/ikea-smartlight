@@ -121,6 +121,8 @@ def main():
     topic = conf.get('tradfri', 'topic')
     hubip = conf.get('tradfri', 'hubip')
     securityid = conf.get('tradfri', 'securityid')
+    psk = conf.get('tradfri', 'psk')
+    ident = conf.get('tradfri', 'ident')
 
     print time.asctime()
     while True:
