@@ -17,8 +17,8 @@ global coap
 coap = '/usr/local/bin/coap-client'
 ###coap-client  -m get  -u "Confuzed22" -k "6V6TYU3VlkR13TWp" "coaps://10.20.30.25:5684/15001/65537" 2>/dev/stdout|awk 'NR==2'
 
-def send(ident, psk, tradfriHub):
-    api = '{} -m get -u "{}" -k "{}" "{}"'.format(coap, ident, psk, tradfriHub)
+def send(ident, psk, tradfriHub, method='get'):
+    api = '{} -m {} -u "{}" -k "{}" "{}"'.format(coap, method, ident, psk, tradfriHub)
 
     try:
 	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
