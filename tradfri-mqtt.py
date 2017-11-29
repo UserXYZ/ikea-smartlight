@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 import tradfri.tradfri_get_json as js
 import tradfri.tradfriActions as act
 from tradfri.tradfriHelper import errmsg as errmsg
+from tradfri.tradfriHelper import make_cfg as make_cfg
 
 client = mqtt.Client("Tradfri")
 cfg = os.path.abspath(os.path.dirname(__file__))+'/tradfri.cfg'
@@ -28,7 +29,7 @@ class MyDaemon(Daemon):
 	signal.signal(signal.SIGTERM, self.sigh)
 	signal.signal(signal.SIGINT, self.sigh)
 	# setup everything and connect, subscribe etc
-	mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
+	mqtt_srv, mqtt_port, topic, hubip, securityid, ident, psk = get_config()
 	setup()
 	client.connect(mqtt_srv, mqtt_port, 60)
 	(result, mid) = client.subscribe([(topic+"/devices/todo", 1), (topic+"/groups/todo", 1)])
@@ -44,7 +45,7 @@ class MyDaemon(Daemon):
 	    #devids.clear()
 	    #groupids.clear()
 	    # get group data as json and publish to /groups topic
-	    msg = js.get_groups_json(hubip, securityid)
+	    msg = js.get_groups_json(hubip, ident, psk)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
 		id = msg_json["ID"]
@@ -57,7 +58,7 @@ class MyDaemon(Daemon):
     		    errmsg(result)
     	    time.sleep(1)
 	    # get devices data as json and publish to /devices topic
-	    msg = js.get_ldevs_json(hubip, securityid)
+	    msg = js.get_ldevs_json(hubip, ident, psk)
 	    for _ in range(len(msg)):
 		msg_json = json.loads(msg[_])
 		id = msg_json["ID"]
@@ -96,7 +97,7 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, msg):
     global devids, groupids
 
-    mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
+    mqtt_srv, mqtt_port, topic, hubip, securityid, ident, psk = get_config()
 
     errmsg("message on: "+msg.topic+" : "+str(msg.payload))
     # check message content
@@ -130,19 +131,19 @@ def on_message(client, userdata, msg):
 	    if id in devids: # normal lights
 	        #errmsg("id "+sid+" is in device list")
 	    	if st:
-	    	    res = act.tradfri_power_light(hubip, securityid, id, st)
+	    	    res = act.tradfri_power_light(hubip, ident, psk, id, st)
 	    	    if res != False:
 	    	        pass
 		    else:
 		        errmsg("d_st: Bad result from COAP client")
 		if brt:
-		    res = act.tradfri_dim_light(hubip, securityid, id, brt)
+		    res = act.tradfri_dim_light(hubip, ident, psk, id, brt)
 		    if res != False:
 	    	        pass
 		    else:
 		        errmsg("d_brt: Bad result from COAP client")
 		if col:
-		    res = act.tradfri_color_light(hubip, securityid, id, col)
+		    res = act.tradfri_color_light(hubip, ident, psk, id, col)
 		    if res != False:
 			pass
 		    else:
@@ -151,13 +152,13 @@ def on_message(client, userdata, msg):
 	    elif id in groupids: # light groups
 	        #errmsg("id "+sid+" is in group list")
 	        if st:
-	    	    res = act.tradfri_power_group(hubip, securityid, id, st)
+	    	    res = act.tradfri_power_group(hubip, ident, psk, id, st)
 	    	    if res != False:
 	    		pass
 		    else:
 			errmsg("g_st: Bad result from COAP client")
 		if brt:
-		    res = act.tradfri_dim_group(hubip, securityid, id, brt)
+		    res = act.tradfri_dim_group(hubip, ident, psk, id, brt)
 		    if res:
 	    	        pass
 		    else:
@@ -186,6 +187,7 @@ def on_log(client, userdata, level, string):
     errmsg(string+"\n")
 
 def get_config():
+    global cfg
     # read configuration from cfg file
     conf = ConfigParser.ConfigParser()
     conf.read(cfg)
@@ -194,12 +196,34 @@ def get_config():
     topic = conf.get('tradfri', 'topic')
     hubip = conf.get('tradfri', 'hubip')
     securityid = conf.get('tradfri', 'securityid')
-    return mqtt_srv, mqtt_port, topic, hubip, securityid
+    ident = conf.get('tradfri', 'ident')
+    psk = conf.get('tradfri', 'psk')
+    return mqtt_srv, mqtt_port, topic, hubip, securityid, ident, psk
+
+def make_config():
+    global cfg
+    # read configuration from cfg file
+    conf = ConfigParser.ConfigParser()
+    if conf.read(cfg):
+	mqtt_srv = conf.get('tradfri', 'mqtt_srv')
+	mqtt_port = conf.get('tradfri', 'mqtt_port')
+	topic = conf.get('tradfri', 'topic')
+	hubip = conf.get('tradfri', 'hubip')
+	securityid = conf.get('tradfri', 'securityid')
+	# read and fill config file if needed
+	if make_cfg(cfg, hubip, securityid):
+	    errmsg("Config file read OK")
+	else:
+	    print("Can't create/update config file!")
+	    sys.exit(1)
+    else:
+	print("No config file!")
+	sys.exit(1)
 
 def setup():
     global client
 
-    mqtt_srv, mqtt_port, topic, hubip, securityid = get_config()
+    mqtt_srv, mqtt_port, topic, hubip, securityid, ident, psk = get_config()
     # define callback methods
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -210,6 +234,8 @@ def setup():
     #client.on_log = on_log
 
 def main():
+    # first read config file and eventually add psk to it
+    make_config()
     # create new daemon
     daemon = MyDaemon('/tmp/tradfri-daemon.pid', '/dev/null', '/dev/null', '/dev/stderr')
     if len(sys.argv) == 2:
