@@ -7,19 +7,18 @@
 # date        : 2017/04/10
 # version     : v1.1.0
 
-import sys, os, subprocess
+import sys, os, json, subprocess
 from shlex import split
 
 # import directly from same package/folder
 #sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-from .tradfriHelper import errmsg as errmsg
 
 global coap
 coap = '/usr/local/bin/coap-client'
 
-def send(ident, psk, payload, tradfriHub):
+def send(ident, psk, payload, tradfriHub, method='put'):
 
-    api = '{} -m put -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, ident, psk, payload, tradfriHub)
+    api = '{} -m {} -u "{}" -k "{}" -e \'{}\' "{}"' .format(coap, method, ident, psk, payload, tradfriHub)
     
     try:
 	p1 = subprocess.Popen(split(api), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=False)
@@ -92,3 +91,17 @@ def tradfri_dim_group(hubip, ident, psk, groupid, value):
     payload = '{ "5851" : %s }' % int(dim)
 
     return send(ident, psk, payload, tradfriHub)
+
+def get_psk(hubip, securityid, ident):
+###coap-client -m post -u 'Client_identity' -k 'SECURITY_CODE' -e '{"9090":"IDENTITY"}' 'coaps://IP_ADDRESS:5684/15011/9063'
+###coap-client -m get -u "IDENTITY" -k "PRE_SHARED_KEY" "coaps://IP_ADDRESS:5684/15001"
+    """ function for getting preshared key from securityid """
+    tradfriHub = 'coaps://{}:5684/15011/9063' .format(hubip)
+    payload = '{ "9090": "%s" }' % ident
+    r = send("Client_identity", securityid, payload, tradfriHub, 'post')
+    try:
+	result = json.loads(r.strip('\n'))
+	return result["9091"]
+    except TypeError:
+	return False
+
