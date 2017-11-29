@@ -3,16 +3,16 @@
 import sys, json, os
 from time import sleep
 
-import .tradfriStatus
-import .tradfriAPI as API
+import tradfriStatus
+import tradfriAPI as API
 from .tradfriHelper import errmsg as errmsg
 
 gldevs = []
 
-def get_ldevs(hubip, securityid):
+def get_ldevs(hubip, ident, psk):
     lightdev = []
     ldevs = []
-    devices = tradfriStatus.tradfri_get_devices(hubip, securityid)
+    devices = tradfriStatus.tradfri_get_devices(hubip, ident, psk)
     if devices is False:
 	errmsg("json-get_ldevs: can't get devices")
 	return ldevs
@@ -20,8 +20,7 @@ def get_ldevs(hubip, securityid):
     if len(devices) > 0:
 	try:
 	    for deviceid in (range(len(devices))):
-		#lightdev.append(tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid])))
-		ldev = tradfriStatus.tradfri_get_lightdev(hubip, securityid, str(devices[deviceid]))
+		ldev = tradfriStatus.tradfri_get_lightdev(hubip, ident, psk, str(devices[deviceid]))
 		if ldev is not False:
     		    lightdev.append(ldev)
 	except TypeError:
@@ -49,9 +48,9 @@ def get_ldevs(hubip, securityid):
             pass
     return ldevs
 
-def get_ldevs_json(hubip, securityid):
+def get_ldevs_json(hubip, ident, psk):
     ldevs_json = []
-    ldevs = get_ldevs(hubip, securityid)
+    ldevs = get_ldevs(hubip, ident, psk)
     if len(ldevs) > 0: # something read from hub, exception didn't return an empty list
 	for _ in range(len(ldevs)):
 	    
@@ -65,12 +64,12 @@ def get_ldevs_json(hubip, securityid):
 	errmsg("json-get_ldevs_json: can't get ldevs")
     return ldevs_json
 
-def get_groups_json(hubip, securityid):
+def get_groups_json(hubip, ident, psk):
     groups_json = []
     lightgroup = []
-    groups = tradfriStatus.tradfri_get_groups(hubip, securityid)
+    groups = tradfriStatus.tradfri_get_groups(hubip, ident, psk)
     sleep(0.5) # give it some time
-    ldevs = get_ldevs(hubip, securityid)
+    ldevs = get_ldevs(hubip, ident, psk)
 
     if len(ldevs) == 0: # failed to read ldevs, bail out
 	errmsg("json-get_groups_json: can't read ldevs")
@@ -79,7 +78,7 @@ def get_groups_json(hubip, securityid):
     if len(groups) > 0: # failed to read groups, bail out
 	try:
 	    for groupid in (range(len(groups))):
-    		lightgroup.append(tradfriStatus.tradfri_get_group(hubip, securityid, str(groups[groupid])))
+    		lightgroup.append(tradfriStatus.tradfri_get_group(hubip, ident, psk, str(groups[groupid])))
 	except TypeError:
 	    errmsg("json-get_groups_json: Can't get groups")
 	    return groups_json
@@ -126,7 +125,7 @@ def main():
 
     print time.asctime()
     while True:
-	res = get_ldevs(hubip, securityid)
+	res = get_ldevs(hubip, ident, psk)
 	if res == False:
 	    print time.asctime(), "get_ldevs Faaaaail!"
 	else:
