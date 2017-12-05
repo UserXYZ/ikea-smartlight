@@ -12,7 +12,8 @@ def make_cfg(cfg, hubip, securityid):
     conf=ConfigParser.ConfigParser()
     if conf.read(cfg):
 	import uuid
-	ident = uuid.uuid4()
+	# make random but identifiable ident
+	ident = "tradfri-mqtt_"+str(uuid.uuid4().get_hex().upper()[0:8])
 	conf.set('tradfri','ident', ident)
 	psk = get_psk(hubip, securityid, ident)
 	if psk == False:
